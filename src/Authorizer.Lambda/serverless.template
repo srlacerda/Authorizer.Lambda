@@ -1,0 +1,125 @@
+
+       
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "An AWS Serverless Application.",
+  "Parameters": {
+    "Stage":{
+        "Description":"The environment type",
+        "Type":"String",
+        "Default":"dev",
+        "AllowedValues": [
+            "dev",
+            "prod"
+        ],
+        "ConstraintDescription":"must be a dev or prod"
+    }
+  },
+  "Mappings": {
+    "EnvironmentVariablesMap":{
+        "Function.Properties.CodeUri.Bucket":{
+            "dev":"srlacerda-poclambda-dev",
+            "prod":"srlacerda-poclambda-prod"
+        },
+        "Function.Properties.Role":{
+            "dev":"arn:aws:iam::054139676642:role/poc-lambda",
+            "prod":"arn:aws:iam::054139676642:role/poc-lambda"
+        },
+        "Poc.Lambda.ConnectionString":{
+            "dev":"Server=instancia-dev; Database=db_dev;",
+            "prod":"Server=instancia-prod; Database=db_prod;"
+        },
+        "Function.Properties.VpcConfig.SecurityGroupsIds":{
+            "dev":"sg-77acd408",
+            "prod":"sg-77acd408"
+        },
+        "Function.Properties.VpcConfig.SubtnetIds1":{
+            "dev":"subnet-a8b60cce",
+            "prod":"subnet-a8b60cce"
+        },
+        "Function.Properties.VpcConfig.SubtnetIds2":{
+            "dev":"subnet-35cd757c",
+            "prod":"subnet-35cd757c"
+        },
+        "Function.Properties.VpcConfig.SubtnetIds3":{
+            "dev":"subnet-b40283ef",
+            "prod":"subnet-b40283ef"
+        }
+    }
+  },
+  "Resources": {
+    "Authorize": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+         "Handler": "Authorizer.Lambda::Authorizer.Lambda.Functions::Authorize",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 110,
+        "Role": {
+          "Fn::FindInMap":[
+            "EnvironmentVariablesMap",
+            "Function.Properties.Role",
+            {
+                "Ref":"Stage"
+            }
+          ]
+        },
+        "Policies": [
+          "AWSLambdaBasicExecutionRole"
+        ],
+        "Tracing": "Active",
+        "Environment": {
+            "Variables":{
+                "env":{
+                    "Ref":"Stage"
+                }
+            }
+        },
+        "VpcConfig": {
+          "SecurityGroupIds" : [
+            {
+              "Fn::FindInMap":[
+                "EnvironmentVariablesMap",
+                "Function.Properties.VpcConfig.SecurityGroupsIds",
+                {
+                  "Ref":"Stage"
+                }
+             ]
+           }
+         ],
+          "SubnetIds" : [
+            {
+              "Fn::FindInMap":[
+                "EnvironmentVariablesMap",
+                "Function.Properties.VpcConfig.SubtnetIds1",
+                {
+                  "Ref":"Stage"
+                }
+              ]
+            },
+            {
+              "Fn::FindInMap":[
+                "EnvironmentVariablesMap",
+                "Function.Properties.VpcConfig.SubtnetIds2",
+                {
+                  "Ref":"Stage"
+                }
+              ]
+            },
+            {
+              "Fn::FindInMap":[
+                "EnvironmentVariablesMap",
+                "Function.Properties.VpcConfig.SubtnetIds3",
+                {
+                  "Ref":"Stage"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
